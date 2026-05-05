@@ -18,6 +18,50 @@ ADDONS = {}
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = "flatsscraper (+http://www.yourdomain.com)"
 
+#import os
+#os.makedirs("dataset", exist_ok=True)  # da bih mogla da zovem -o output.json i da imam dataset folder
+
+DOWNLOAD_HANDLERS = {
+    "http": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+    "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+}
+TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
+
+PLAYWRIGHT_LAUNCH_OPTIONS = {
+    "headless": True,
+    "args": ["--disable-blink-features=AutomationControlled"],
+}
+DEFAULT_REQUEST_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept-Language": "sr-RS,sr;q=0.9,en;q=0.8",
+}
+
+PLAYWRIGHT_BROWSER_TYPE = "chromium"
+
+
+PLAYWRIGHT_CONTEXTS = {
+    "default": {
+        "user_data_dir": "C:/RGZ/webStanovi/browser_profile",
+    }
+}
+
+PLAYWRIGHT_LAUNCH_OPTIONS = {"headless": True}
+
+import asyncio
+import sys
+
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+'''
+PLAYWRIGHT_ABORT_REQUEST = lambda req: req.resource_type in ("image", "font", "ping") or any(
+    domain in req.url for domain in ["google-analytics", "facebook", "hotjar", "doubleclick", "adocean"]
+)
+'''
+PLAYWRIGHT_ABORT_REQUEST = lambda req: any(
+    domain in req.url for domain in ["google-analytics", "facebook", "hotjar", "doubleclick", "adocean"]
+)
+
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
 #ROBOTSTXT_OBEY = False
@@ -62,17 +106,13 @@ DOWNLOAD_DELAY = 1
 
 
 ITEM_PIPELINES = {
-#    "flatsscraper.pipelines.FlatsscraperPipeline": 300,
-    #'scrapy.pipelines.images.ImagesPipeline': 1,
-    #'flatsscraper.pipelines.CustomImagesPipeline': 1
     'flatsscraper.pipelines.FlatsDirectoryImagesPipeline':1
 }
-
-
 
 #ITEM_PIPELINES = {'scrapy.pipelines.images.ImagesPipeline': 1}  #ovo je defoult zato i koristimo image_urls
 #pip install pillow
 IMAGES_STORE = 'carousels'
+
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
 #AUTOTHROTTLE_ENABLED = True
@@ -97,6 +137,8 @@ IMAGES_STORE = 'carousels'
 # Set settings whose default value is deprecated to a future-proof value
 
 FEED_EXPORT_ENCODING = "utf-8"
+
+#creating dataset/ folder:
 
 FEEDS = {
     "dataset/data.json": {

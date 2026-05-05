@@ -15,55 +15,48 @@ class FlatsscraperPipeline:
     def process_item(self, item, spider):
         return item
 
-
-'''
-from scrapy.http import Request, Response
-from scrapy.pipelines.media import FileInfo, FileInfoOrError, MediaPipeline
-from typing import Any #IO, TYPE_CHECKING, Any
-
+import scrapy
 from scrapy.pipelines.images import ImagesPipeline
-
-class CustomImagesPipeline(ImagesPipeline): #ctrl click on IMagesPipeline
-    def file_path(
-        self,
-        request: Request,
-        response: Response | None = None,
-        info: MediaPipeline.SpiderInfo | None = None,
-        *,
-        item: Any = None,
-    ) -> str:
-        return request.url.split('/')[-1] #file name
-'''
-from urllib.parse import urlparse
-import scrapy, re
-from scrapy.pipelines.images import ImagesPipeline
+import hashlib, re
+from scrapy.pipelines.media import FileInfo
 
 class FlatsDirectoryImagesPipeline(ImagesPipeline):
 
-
     def get_media_requests(self, item, info):
+        # Only request images if 'image_urls' exists
         for image_url in item.get('image_urls', []):
             yield scrapy.Request(image_url)
 
-    def file_path(self, request, response=None, info=None, *, item=None):
-        # Grab the original image file name
+    def file_path(self, request, response=None, info=None, item=None):
         image_filename = request.url.split('/')[-1]
         image_guid = hashlib.sha1(request.url.encode()).hexdigest()
-        # Check if we have a title
+
+        # Safe folder name based on title
         if item and 'title' in item and item['title']:
             raw_title = item['title']
-
-            # SANITIZE THE TITLE!
-            # This regex replaces anything that isn't a letter, number, or dash with an underscore
             safe_title = re.sub(r'[^\w\-]', '_', raw_title)
-
-            # Remove any trailing or multiple underscores to make it look neat
             safe_title = re.sub(r'_+', '_', safe_title).strip('_')
-
-            folder_name = safe_title if safe_title else "unknown_book"
+            folder_name = safe_title if safe_title else "unknown_flat"
         else:
-            folder_name = "unknown_book"
+            folder_name = "unknown_flat"
 
-        # Combine the safe folder name and the image name
-        #return f"{folder_name}/{image_guid[:2]}/{image_guid}.jpg"
         return f"{folder_name}/{image_guid}.jpg"
+    '''
+    def item_completed(self, results, item, info):
+        # Images are downloaded, but we remove all image-related fields from the item
+        if 'image_urls' in item:
+            del item['image_urls']
+        if 'images' in item:
+            del item['images']
+        if 'page_url' in item:
+            del item['page_url']
+        return item
+    '''
+    '''
+    def item_completed(self, results, item, info):
+        # Don't drop item if images fail — just store what worked
+        item['images'] = [r for ok, r in results if ok]
+        # Remove image_urls so feed exporter doesn't choke on it
+        item.pop('image_urls', None)
+        return item  # ← always return the item, never raise DropItem
+    '''

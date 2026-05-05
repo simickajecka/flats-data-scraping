@@ -18,5 +18,5 @@ class FlatsscraperItem(scrapy.Item):
     image_urls = scrapy.Field()
     images = scrapy.Field()
     page_url = scrapy.Field()
-
-
+    date_update = scrapy.Field()
+    date_post = scrapy.Field()
